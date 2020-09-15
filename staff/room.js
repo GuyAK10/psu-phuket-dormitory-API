@@ -1,19 +1,17 @@
 const express = require('express');
-const firestore= require('../configs/firebase')
-const cors = require('cors')
+const cors = require('cors');
 const requireJWTAuth = require("../configs/jwt")
-const db = firestore.firestore();
+const firestore = require('../configs/firebase')
+
 const app = express()
 const router = express.Router()
+const db = firestore.firestore()
 
-app.use(cors())
-app.use(router)
-
-router.post('/staff/room/',requireJWTAuth,(req, res) => {
+router.post('/staff/room/', requireJWTAuth, (req, res) => {
       try {
             const statusDormitory = {
-                  system:req.body.system,
-                  all:req.body.all,
+                  system: req.body.system,
+                  all: req.body.all,
             };
             const docRef = db.doc('/dormitory/status')
             docRef.set(statusDormitory)
@@ -24,35 +22,35 @@ router.post('/staff/room/',requireJWTAuth,(req, res) => {
       }
 });
 
-router.get('/staff/room/:floorId/',requireJWTAuth,async (req, res) => {
+router.get('/staff/room/:floorId/', requireJWTAuth, async (req, res) => {
       try {
             const floorId = req.params.floorId;
             const docRef = db.collection(`${floorId}`);
             const roomRef = await docRef.get()
-            let result=[];
+            let result = [];
 
-            roomRef.forEach(profile=>{
+            roomRef.forEach(profile => {
 
                   let profileList = {
-                        profileId : '',      
+                        profileId: '',
                   }
 
                   profileList.profileId = profile.id
-                  Object.assign(profileList, profile.data() )
+                  Object.assign(profileList, profile.data())
                   result.push(profileList)
-                
+
             })
-            res.status(200).send(result);  
+            res.status(200).send(result);
 
       } catch (error) {
             console.log(error)
       }
-})  
+})
 
-router.post('/staff/room/:floorId/:roomId',requireJWTAuth,async (req, res) => {
+router.post('/staff/room/:floorId/:roomId', requireJWTAuth, async (req, res) => {
       try {
             const statusRoom = {
-                  roomStatus:req.body.roomStatus
+                  roomStatus: req.body.roomStatus
             }
 
             const floorId = req.params.floorId;
@@ -66,7 +64,7 @@ router.post('/staff/room/:floorId/:roomId',requireJWTAuth,async (req, res) => {
       }
 });
 
-router.delete('/staff/room/:floorId/:roomId/:studentId',requireJWTAuth, (req, res) => {
+router.delete('/staff/room/:floorId/:roomId/:studentId', requireJWTAuth, (req, res) => {
       try {
             const floorId = req.params.floorId;
             const roomId = req.params.roomId;
@@ -74,23 +72,23 @@ router.delete('/staff/room/:floorId/:roomId/:studentId',requireJWTAuth, (req, re
             const FieldValue = firestore.firestore.FieldValue;
             const docRef = db.doc(`/${floorId}/${roomId}`)
             const value = `${studentId}`
-            
+
             if (value == "student1") {
                   docRef.update({
-                        student1:FieldValue.delete()
+                        student1: FieldValue.delete()
                   })
                   res.status(200).send("delete student1 success");
             }
-            else if(value == "student2"){
+            else if (value == "student2") {
                   docRef.update({
-                        student2:FieldValue.delete()
+                        student2: FieldValue.delete()
                   })
                   res.status(200).send("delete student2 success");
             }
-            else{
+            else {
                   res.status(200).send("delete failed");
             }
-      } 
+      }
       catch (error) {
             console.log(error)
       }
