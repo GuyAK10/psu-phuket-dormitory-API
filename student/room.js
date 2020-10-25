@@ -1,16 +1,70 @@
 const express = require('express');
-const cors = require('cors');
-const requireJWTAuth = require("../configs/jwt")
 const firestore = require('../configs/firebase')
 
-const app = express()
 const router = express.Router()
 const db = firestore.firestore()
 
-app.use(cors())
-app.use(router)
+bookInfomation = async (profileData, res) => {
+    try {
 
-router.get('/student/room/:floorId/', requireJWTAuth, async (req, res) => {
+        const floors = [
+            "floorA",
+            "floorB",
+            " floorC",
+            "floorD",
+            "floorE",
+            "floorF",
+            "floorG",
+            "floorH"
+        ]
+
+        const orderId = [
+            "student1",
+            "student2"
+        ]
+
+        let booked = false;
+
+        for (var a in floors) {
+            var b = floors[a];
+            const roomRef = db.collection(b)
+            for (c in orderId) {
+                var d = orderId[c]
+                const result = await roomRef.where(`${d}.id`, "==", profileData.profile.id).get()
+                
+                if (!result.empty) {
+                    booked = true
+                }
+            }
+        }
+        return booked
+
+    } catch (error) {
+        res.sendStatus(400);
+    }
+}
+
+const bookingRoom = (bookRoom, floorId, roomId, orderId, res) => {
+    try {
+        const bookRef = db.collection(floorId).doc(roomId)
+        if (orderId == "student1") {
+            bookRef.update({ student1: bookRoom })
+            res.status(200).send("booking student1 success");
+        }
+        else if (orderId == "student2") {
+            bookRef.update({ student2: bookRoom })
+            res.status(200).send("booking student2 success");
+        }
+        else {
+            res.status(400).send("booking failed");
+        }
+    } catch (error) {
+        res.sendStatus(400);
+    }
+
+}
+
+router.get('/student/room/:floorId/',  async (req, res) => {
     try {
         const floorId = req.params.floorId;
         const checkRef = db.collection('dormitory').doc('status');
@@ -38,68 +92,48 @@ router.get('/student/room/:floorId/', requireJWTAuth, async (req, res) => {
                 statusAllroom: checkAllroom
             });
         } else {
-            res.send("ระบบยังไม่เปิดจอง");;
+            res.status().send("ระบบยังไม่เปิดจอง");;
         }
 
     } catch (error) {
-        console.log(error)
+        res.sendStatus(400);
     }
 
 });
 
-
-router.post('/student/room/:floorId/:roomId/:studentId', requireJWTAuth, (req, res) => {
+router.post('/student/room/:floorId/:roomId/:studentId/:orderId', async (req, res) => {
     try {
-        let firstData = {
-            student1: {
-                id: "",
-                name: "",
-                surname: "",
-                nickname: "",
-                tel: ""
-            }
-        }
-
-        let secondData = {
-            student2: {
-                id: "",
-                name: "",
-                surname: "",
-                nickname: "",
-                tel: ""
-            }
-        }
 
         const floorId = req.params.floorId;
         const roomId = req.params.roomId;
         const studentId = req.params.studentId;
+        const orderId = req.params.orderId;
 
-        const docRef = db.doc(`/${floorId}/${roomId}`)
-        if (studentId == "student1") {
-            firstData.student1.id = req.body.id
-            firstData.student1.name = req.body.name
-            firstData.student1.surname = req.body.surname
-            firstData.student1.nickname = req.body.nickname
-            firstData.student1.tel = req.body.tel
+        const profileRef = db.collection('students').doc(`${studentId}`);
+        const studentRef = await profileRef.get()
+        if (!studentRef.exists) {
+            res.send("กรุณาบันทึกข้อมูลส่วนตัว")
+        } else {
+            const profileData = studentRef.data()
+            const bookRoom = {
+                id: profileData.profile.id,
+                name: profileData.profile.name,
+                surname: profileData.profile.surname,
+                nickname: profileData.profile.nickname,
+                tel: profileData.contact.tel
+            }
 
-            docRef.update(firstData)
-            res.status(200).send("booking student1 success");
+            const isBooked = await bookInfomation(profileData, res) 
+            if (isBooked) {
+                res.status(200).send("จองแล้ว")
+            } else if (!isBooked) {
+                bookingRoom(bookRoom, floorId, roomId, orderId, res)
+            }
+            
         }
-        else if (studentId == "student2") {
-            secondData.student2.id = req.body.id
-            secondData.student2.name = req.body.name
-            secondData.student2.surname = req.body.surname
-            secondData.student2.nickname = req.body.nickname
-            secondData.student2.tel = req.body.tel
 
-            docRef.update(secondData)
-            res.status(200).send("booking student2 success");
-        }
-        else {
-            res.status(200).send("booking failed");
-        }
     } catch (error) {
-        console.log(error)
+        res.sendStatus(400);
     }
 
 });

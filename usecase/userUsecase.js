@@ -1,20 +1,27 @@
-
-
 class UserUsecase {
 
-
     getRole(dataFromSoup) {
-        let result = this.getLastArray(dataFromSoup.GetUserDetailsResult.string);
-        result = result.split(",");
-        result = result[4];
-        result = result.split("=");
-        result = result[1];
-        return result;
+        try {
+            let result = this.getLastArray(dataFromSoup.GetUserDetailsResult.string);
+            result = result.split(",");
+            result = result[4];
+            result = result.split("=");
+            result = result[1];
+            return result;
+        } catch (error) {
+            return null
+        }
+       
     }
 
     getStudentId(dataFromSoup) {
-        let result = dataFromSoup.GetUserDetailsResult.string[0];
-        return result;
+        try {
+            let result = dataFromSoup.GetUserDetailsResult.string[0];
+            return result;  
+        } catch (error) {
+            return null
+        }
+     
     }
 
     getLastArray(array = []) {
